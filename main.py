@@ -1,148 +1,151 @@
 class MotorBuscaHeuristica:
-    def __init__(self, grafo, heuristicas):
+
+    def __init__(self, grafo, heuristicas, custos_g=None):
         self.grafo = grafo
         self.heuristicas = heuristicas
+        self.custos_g = custos_g or {}
 
     def obter_hn(self, estado):
-        return self.heuristicas.get(estado, float('inf'))
-
-    def selecionar_melhor_candidato(self, candidatos):
-        """
-        Seleciona o candidato com menor h(n).
-
-        Desempate:
-        1. menor h(n)
-        2. menor g(n)
-        3. ordem alfabética
-        """
-        return min(
-            candidatos,
-            key=lambda candidato: (
-                self.obter_hn(candidato['estado']),
-                candidato['g'],
-                candidato['estado']
-            )
+        return self.heuristicas.get(
+            estado,
+            float('inf')
         )
 
-    def expandir_vizinhos(self, no_atual):
-        """
-        Gera os candidatos vizinhos do estado atual.
-        """
+    def obter_custo_aresta(self, origem, destino):
+
+        if (origem, destino) in self.custos_g:
+            return self.custos_g[(origem, destino)]
+
+        return self.grafo.get(
+            origem,
+            {}
+        ).get(destino, 0)
+
+    def selecionar_melhor_candidato(self, candidatos):
+
+        return sorted(
+            candidatos,
+            key=lambda c: (
+                self.obter_hn(c['estado']),
+                c['g'],
+                c['estado']
+            )
+        )[0]
+
+    def expandir_vizinhos(
+        self,
+        no_atual,
+        visitados
+    ):
+
         novos_candidatos = []
 
         estado_atual = no_atual['estado']
 
-        for vizinho, custo in self.grafo.get(
-            estado_atual, {}
-        ).items():
+        vizinhos = self.grafo.get(
+            estado_atual,
+            {}
+        )
 
-            novo_g = no_atual['g'] + custo
+        for vizinho, custo_aresta in vizinhos.items():
 
-            novos_candidatos.append({
-                'estado': vizinho,
-                'g': novo_g
-            })
+            if vizinho not in visitados:
+
+                g_acumulado = (
+                    no_atual['g']
+                    + custo_aresta
+                )
+
+                novos_candidatos.append({
+                    'estado': vizinho,
+                    'g': g_acumulado,
+                    'pai': no_atual,
+                    'caminho':
+                        no_atual['caminho']
+                        + [vizinho]
+                })
 
         return novos_candidatos
 
-    def buscar(self, origem, destino, verbose=True):
 
-        no_inicial = {
-            'estado': origem,
-            'g': 0
-        }
+# ============================================================
+# GRAFO DO PROJETO
+# ============================================================
 
-        fronteira = [no_inicial]
-        ordem_selecao = []
+grafo_mapa = {
 
-        while fronteira:
+    'Base de Atendimento': {
+        'Shopping': 4,
+        'Universidade': 1,
+        'Terminal': 5
+    },
 
-            # Escolhe o menor h(n)
-            no_atual = self.selecionar_melhor_candidato(
-                fronteira
-            )
+    'Shopping': {
+        'Base de Atendimento': 4,
+        'Parque': 3,
+        'Centro': 10
+    },
 
-            # Remove da fronteira
-            fronteira.remove(no_atual)
+    'Universidade': {
+        'Base de Atendimento': 1,
+        'Centro': 2
+    },
 
-            estado_atual = no_atual['estado']
+    'Terminal': {
+        'Base de Atendimento': 5,
+        'Centro': 4,
+        'Ponte': 3
+    },
 
-            ordem_selecao.append(estado_atual)
+    'Parque': {
+        'Shopping': 3,
+        'Hospital Central': 3,
+        'Centro': 2
+    },
 
-            if verbose:
-                print(f"\n=== ESTADO ATUAL ===")
-                print(f"Estado: {estado_atual}")
-                print(f"h(n): {self.obter_hn(estado_atual)}")
-                print(f"g(n): {no_atual['g']}")
+    'Centro': {
+        'Shopping': 10,
+        'Universidade': 2,
+        'Terminal': 4,
+        'Parque': 2,
+        'Hospital Central': 4,
+        'Rodoviária': 3,
+        'Ponte': 4
+    },
 
-            # Verifica objetivo
-            if estado_atual == destino:
+    'Ponte': {
+        'Terminal': 3,
+        'Centro': 4,
+        'Rodoviária': 3,
+        'Aeroporto': 6
+    },
 
-                if verbose:
-                    print("\n🎯 OBJETIVO ATINGIDO!")
-                    print(f"Destino: {destino}")
+    'Hospital Central': {
+        'Parque': 3,
+        'Centro': 4,
+        'Rodoviária': 2
+    },
 
-                return {
-                    'ordem_selecao': ordem_selecao,
-                    'no_final': no_atual
-                }
+    'Rodoviária': {
+        'Hospital Central': 2,
+        'Centro': 3,
+        'Ponte': 3
+    },
 
-            # Expande vizinhos
-            novos = self.expandir_vizinhos(no_atual)
+    'Aeroporto': {}
+}
 
-            if verbose:
-                print("\nNovos candidatos:")
 
-                for candidato in novos:
-                    print(
-                        f"- {candidato['estado']} | "
-                        f"h(n) = "
-                        f"{self.obter_hn(candidato['estado'])} | "
-                        f"g(n) = {candidato['g']}"
-                    )
+heuristicas_originais = {
 
-            # Adiciona candidatos à fronteira
-            for candidato in novos:
-
-                if not any(
-                    c['estado'] == candidato['estado']
-                    for c in fronteira
-                ):
-                    fronteira.append(candidato)
-
-            # Mostra TODOS os candidatos disponíveis
-            if verbose:
-                print("\nCandidatos disponíveis:")
-
-                candidatos_ordenados = sorted(
-                    fronteira,
-                    key=lambda candidato: (
-                        self.obter_hn(candidato['estado']),
-                        candidato['g'],
-                        candidato['estado']
-                    )
-                )
-
-                for candidato in candidatos_ordenados:
-                    print(
-                        f"- {candidato['estado']} | "
-                        f"h(n) = "
-                        f"{self.obter_hn(candidato['estado'])} | "
-                        f"g(n) = {candidato['g']}"
-                    )
-
-            if not fronteira:
-                print("\nFronteira vazia.")
-                return None
-
-            proximo = self.selecionar_melhor_candidato(
-                fronteira
-            )
-
-            if verbose:
-                print(
-                    f"\nPróximo escolhido: "
-                    f"{proximo['estado']}"
-                )
-
-        return None
+    'Base de Atendimento': 5,
+    'Shopping': 11,
+    'Universidade': 15,
+    'Terminal': 11,
+    'Parque': 19,
+    'Centro': 12,
+    'Ponte': 14,
+    'Hospital Central': 0,
+    'Rodoviária': 29,
+    'Aeroporto': 5
+}
