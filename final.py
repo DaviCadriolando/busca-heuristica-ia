@@ -1,6 +1,6 @@
 from gestor_estados import GestorDeEstados
 from main import grafo_mapa, heuristicas_originais
-
+from heuristica_visual import exibir_heuristica_resultado
 
 def executar_busca(
     nome_experimento,
@@ -111,3 +111,12 @@ if __name__ == "__main__":
         origem=origem,
         destino=destino
     )
+
+    if resultado is not None:
+        exibir_heuristica_resultado(
+            grafo = grafo_mapa,
+            heuristicas = heuristicas_originais,
+            origem = origem,
+            destino = destino, 
+            resultado = resultado
+        )
