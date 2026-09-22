@@ -137,7 +137,7 @@ class GestorDeEstados(MotorBuscaHeuristica):
                 if verbose:
 
                     print(
-                        "\n🎯 OBJETIVO ATINGIDO!"
+                        "\n OBJETIVO ATINGIDO!"
                     )
 
                     print(
