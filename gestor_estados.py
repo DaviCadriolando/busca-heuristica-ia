@@ -11,7 +11,7 @@ class GestorDeEstados(MotorBuscaHeuristica):
         self.predecessor = {}
 
     # =========================================================
-    # CONTROLE DE VISITADOS
+    # CONTROLE DE VISITADOS ;
     # =========================================================
 
     def ja_visitado(self, estado):
